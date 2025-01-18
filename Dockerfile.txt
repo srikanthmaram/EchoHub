@@ -1,14 +1,30 @@
-# Use OpenJDK 17 as the base image
-FROM openjdk:17-jdk-slim
+# Use Maven to build the project
+FROM maven:3.8.6-openjdk-17-slim AS builder
 
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy the jar file to the container
-COPY target/*.jar app.jar
+# Copy the Maven files and download dependencies
+COPY pom.xml .
+RUN mvn dependency:go-offline
 
-# Expose port 8080
+# Copy the source code
+COPY src /app/src
+
+# Build the JAR file
+RUN mvn clean package
+
+# Use OpenJDK to run the application
+FROM openjdk:17-jdk-slim
+
+# Set the working directory
+WORKDIR /root
+
+# Copy the JAR file from the builder stage to the final image
+COPY --from=builder /app/target/*.jar app.jar
+
+# Expose the port your app will run on
 EXPOSE 8080
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "app.jar"]
