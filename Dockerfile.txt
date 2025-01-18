@@ -1,30 +1,28 @@
-# Build stage: Use Maven with OpenJDK 17
-FROM maven:3.9.4-openjdk-17 AS builder
+# Builder Stage: Maven with OpenJDK 17
+FROM maven:3.8.8-openjdk-17 AS builder
 
-# Set the working directory
 WORKDIR /app
 
 # Copy Maven files and download dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline
 
-# Copy the entire project
+# Copy source code
 COPY . .
 
-# Build the Spring Boot application
+# Build the JAR (skip tests for faster build)
 RUN mvn clean package -DskipTests
 
-# Run stage: Use lightweight OpenJDK to run the app
+# Runtime Stage: Lightweight JDK image
 FROM openjdk:17-jdk-slim
 
-# Set the working directory
 WORKDIR /root
 
-# Copy the built JAR from the builder stage
+# Copy built JAR from the builder
 COPY --from=builder /app/target/*.jar app.jar
 
 # Expose the port
 EXPOSE 8080
 
-# Command to run the app
+# Run the Spring Boot app
 CMD ["java", "-jar", "app.jar"]
