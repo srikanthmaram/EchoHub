@@ -1,13 +1,13 @@
-# Use OpenJDK 17 image
+# Use OpenJDK 17 as the base image
 FROM openjdk:17-jdk-slim
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy the jar file into the container
+# Copy the jar file to the container
 COPY target/*.jar app.jar
 
-# Expose the port
+# Expose port 8080
 EXPOSE 8080
 
 # Run the application
