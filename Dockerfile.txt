@@ -1,29 +1,29 @@
-# Stage 1: Build the application
-FROM debian:bookworm-slim AS builder
+# Step 1: Use Maven image to build the application
+FROM maven:3.8.6-openjdk-17-slim AS builder
 
-# Set the working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy the Maven files and download dependencies
+# Copy the pom.xml file and download dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline
 
-# Copy the source code
-COPY src /app/src
+# Copy the application source code into the container
+COPY src ./src
 
-# Build the JAR file
-RUN mvn clean package
+# Build the application (creates a JAR file in the /app/target directory)
+RUN mvn clean package -DskipTests
 
-# Use OpenJDK to run the application
+# Step 2: Use OpenJDK image to run the application
 FROM openjdk:17-jdk-slim
 
 # Set the working directory
 WORKDIR /root
 
-# Copy the JAR file from the builder stage to the final image
+# Copy the JAR file from the builder stage
 COPY --from=builder /app/target/*.jar app.jar
 
-# Expose the port your app will run on
+# Expose the port the app runs on
 EXPOSE 8080
 
 # Run the application
