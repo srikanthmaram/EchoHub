@@ -1,28 +1,30 @@
 # Stage 1: Build the application
-FROM debian:bookworm-slim AS build
+FROM debian:bookworm-slim AS builder
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the pom.xml and download the dependencies
+# Copy the Maven files and download dependencies
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+RUN mvn dependency:go-offline
 
-# Copy the source code and build the application
-COPY src ./src
-RUN mvn package -DskipTests
+# Copy the source code
+COPY src /app/src
 
-# Stage 2: Run the application
+# Build the JAR file
+RUN mvn clean package
+
+# Use OpenJDK to run the application
 FROM openjdk:17-jdk-slim
 
 # Set the working directory
-WORKDIR /app
+WORKDIR /root
 
-# Copy the built application from the previous stage
-COPY --from=build /app/target/your-app.jar ./app.jar
+# Copy the JAR file from the builder stage to the final image
+COPY --from=builder /app/target/*.jar app.jar
 
-# Expose the port the application runs on
+# Expose the port your app will run on
 EXPOSE 8080
 
-# Command to run the application
-ENTRYPOINT ["java", "-jar", "./app.jar"]
+# Run the application
+CMD ["java", "-jar", "app.jar"]
